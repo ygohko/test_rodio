@@ -58,8 +58,14 @@ fn main() {
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let sink = Sink::try_new(&stream_handle).unwrap();
 
+    /*
     // Add a dummy source of the sake of the example.
-    // let source = SineWave::new(440.0).take_duration(Duration::from_secs_f32(3.0)).amplify(1.0);
+    let mut source = SineWave::new(440.0).take_duration(Duration::from_secs_f32(3.0)).amplify(1.0);
+    for i in 0..500 {
+        println!("next: {}", source.next().unwrap());
+    }
+    */
+
     let source = TestSource::new();
     sink.append(source);
 
