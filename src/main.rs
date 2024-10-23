@@ -10,7 +10,7 @@ struct TestSource {
 
 impl Source for TestSource {
     fn current_frame_len(&self) -> Option<usize> {
-        Some(65536)
+        None
     }
 
     fn channels(&self) -> u16 {
@@ -48,6 +48,45 @@ impl TestSource {
         return Self {
             count: 0,
         }
+    }
+}
+
+struct WaveSource {
+    samples: Vec<f32>,
+    index: usize,
+}
+
+impl Source for WaveSource {
+    fn current_frame_len(&self) -> Option<usize> {
+        None
+    }
+
+    fn channels(&self) -> u16 {
+        1
+    }
+
+    fn sample_rate(&self) -> u32 {
+        44100
+    }
+
+    fn total_duration(&self) -> Option<Duration> {
+        None
+    }
+}
+
+impl Iterator for WaveSource {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let value: f32;
+        if self.index >= self.samples.len() {
+            return None;
+        }
+
+        value = self.samples[self.index];
+        self.index += 1;
+
+        Some(value)
     }
 }
 
