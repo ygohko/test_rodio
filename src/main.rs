@@ -90,6 +90,15 @@ impl Iterator for WaveSource {
     }
 }
 
+impl WaveSource {
+    fn new() -> Self {
+        Self {
+            samples: Vec::new(),
+            index: 0,
+        }
+    }
+}
+
 fn main() {
     println!("Hello, world!");
 
