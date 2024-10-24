@@ -1,8 +1,10 @@
 use std::fs::File;
 use std::io::BufReader;
+use std::path::Path;
 use std::time::Duration;
 use rodio::{Decoder, OutputStream, Sink};
 use rodio::source::{SineWave, Source};
+use wav_io::reader;
 
 struct TestSource {
     count: i32,
@@ -96,6 +98,20 @@ impl WaveSource {
             samples: Vec::new(),
             index: 0,
         }
+    }
+
+    fn load(path: impl AsRef<Path>) -> Self {
+        let mut result = Self {
+            samples: Vec::new(),
+            index: 0,
+        };
+        let file = File::open(path).unwrap();
+        let (head, samples) = wav_io::read_from_file(file).unwrap();
+        for sample in samples {
+          result.samples.push(sample)  
+        }
+
+        result
     }
 }
 
