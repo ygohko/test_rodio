@@ -68,7 +68,7 @@ impl Source for WaveSource {
     }
 
     fn sample_rate(&self) -> u32 {
-        44100
+        24000
     }
 
     fn total_duration(&self) -> Option<Duration> {
@@ -106,7 +106,8 @@ impl WaveSource {
             index: 0,
         };
         let file = File::open(path).unwrap();
-        let (head, samples) = wav_io::read_from_file(file).unwrap();
+        let (header, samples) = wav_io::read_from_file(file).unwrap();
+        println!("header: {:?}", header);
         for sample in samples {
           result.samples.push(sample)  
         }
@@ -130,8 +131,9 @@ fn main() {
     }
     */
 
-    let source = TestSource::new();
-    sink.append(source);
+    let test_source = TestSource::new();
+    let wave_source = WaveSource::load("assets/test.wav");
+    sink.append(wave_source);
 
     // The sound plays in a separate thread. This call will block the current thread until the sink
     // has finished playing all its queued sounds.
