@@ -116,6 +116,44 @@ impl WaveSource {
     }
 }
 
+struct FtResult {
+    a0: f32,
+    a: Vec<f32>,
+    b: Vec<f32>,
+}
+
+fn execute_ft(source: &WaveSource) -> FtResult {
+    // TODO: Calculate a0.
+    let mut sum: f32 = 0.0;
+    for sample in source.samples {
+        sum += sample:
+    }
+    let mut result = FtResult {
+        a0: 0.0,
+        a: Vec::new(),
+        b: Vec::new(),
+    };
+    result.a0 = sum / samples.len();
+
+    const PARAMETER_COUNT: i32 = 8;
+    const SAMPLING_FREQUENCY: i32 = 24000;
+    const BASE_FREQUENCY: i32 = 440;
+    for i in 1..PARAMETER_COUNT {
+        let mut angle: f32 = 0.0;
+
+        let mut sum: f32 = 0.0;
+        for sample in source.samples {
+            let value = angle.cos();
+            sum += sample * value;
+        }
+        result.a.push(sum / samples.len());
+    }
+    
+    // TODO: Calculate a1 - a8.
+
+    // TODO: Calculate b1 - b8.
+}
+
 fn main() {
     println!("Hello, world!");
 
