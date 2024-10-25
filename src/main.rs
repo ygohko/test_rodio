@@ -187,11 +187,20 @@ fn main() {
     let wave_source = WaveSource::load("assets/test.wav");
     let result = execute_ft(&wave_source);
 
+    println!("a0: {}", result.a0);
+    for i in 0..result.a.len() {
+        println!("a{}: {}", i + 1, result.a[i]);
+    }
+    for i in 0..result.b.len() {
+        println!("b{}: {}", i + 1, result.b[i]);
+    }
+    
     // TODO: Show results.
-
+    /*
     sink.append(wave_source);
 
     // The sound plays in a separate thread. This call will block the current thread until the sink
     // has finished playing all its queued sounds.
     sink.sleep_until_end();
+    */
 }
