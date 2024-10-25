@@ -1,3 +1,4 @@
+use std::f32::consts;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
@@ -123,35 +124,48 @@ struct FtResult {
 }
 
 fn execute_ft(source: &WaveSource) -> FtResult {
-    // TODO: Calculate a0.
+    // Calculate a0.
     let mut sum: f32 = 0.0;
-    for sample in source.samples {
-        sum += sample:
+    for sample in &source.samples {
+        sum += sample;
     }
     let mut result = FtResult {
         a0: 0.0,
         a: Vec::new(),
         b: Vec::new(),
     };
-    result.a0 = sum / samples.len();
+    result.a0 = sum / (source.samples.len() as f32);
 
     const PARAMETER_COUNT: i32 = 8;
-    const SAMPLING_FREQUENCY: i32 = 24000;
-    const BASE_FREQUENCY: i32 = 440;
+    const SAMPLING_FREQUENCY: f32 = 24000.0;
+    const BASE_FREQUENCY: f32 = 440.0;
+    // Calculate a1 - a8.
     for i in 1..PARAMETER_COUNT {
         let mut angle: f32 = 0.0;
 
         let mut sum: f32 = 0.0;
-        for sample in source.samples {
+        for sample in &source.samples {
             let value = angle.cos();
             sum += sample * value;
+            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * (i as f32);
         }
-        result.a.push(sum / samples.len());
+        result.a.push(sum / (source.samples.len() as f32));
     }
-    
-    // TODO: Calculate a1 - a8.
 
-    // TODO: Calculate b1 - b8.
+    // Calculate b1 - b8.
+    for i in 1..PARAMETER_COUNT {
+        let mut angle: f32 = 0.0;
+
+        let mut sum: f32 = 0.0;
+        for sample in &source.samples {
+            let value = angle.sin();
+            sum += sample * value;
+            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * (i as f32);
+        }
+        result.b.push(sum / (source.samples.len() as f32));
+    }
+
+    result
 }
 
 fn main() {
