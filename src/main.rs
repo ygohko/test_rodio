@@ -185,6 +185,10 @@ fn main() {
 
     let test_source = TestSource::new();
     let wave_source = WaveSource::load("assets/test.wav");
+    let result = execute_ft(&wave_source);
+
+    // TODO: Show results.
+
     sink.append(wave_source);
 
     // The sound plays in a separate thread. This call will block the current thread until the sink
