@@ -7,6 +7,9 @@ use rodio::{Decoder, OutputStream, Sink};
 use rodio::source::{SineWave, Source};
 use wav_io::reader;
 
+const SAMPLING_FREQUENCY: f32 = 24000.0;
+const BASE_FREQUENCY: f32 = 440.0;
+
 struct TestSource {
     count: i32,
 }
@@ -95,8 +98,15 @@ impl Iterator for WaveSource {
 
 impl WaveSource {
     fn new() -> Self {
+        let mut angle: f32 = 0.0;
+        let mut samples: Vec<f32> = Vec::new();
+        for i in 0..(24000 * 3) {
+            samples.push(angle.sin());
+            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY;
+        }
+
         Self {
-            samples: Vec::new(),
+            samples: samples,
             index: 0,
         }
     }
@@ -137,8 +147,6 @@ fn execute_ft(source: &WaveSource) -> FtResult {
     result.a0 = sum / (source.samples.len() as f32);
 
     const PARAMETER_COUNT: i32 = 8;
-    const SAMPLING_FREQUENCY: f32 = 24000.0;
-    const BASE_FREQUENCY: f32 = 440.0;
     // Calculate a1 - a8.
     for i in 1..PARAMETER_COUNT {
         let mut angle: f32 = 0.0;
@@ -184,7 +192,8 @@ fn main() {
     */
 
     let test_source = TestSource::new();
-    let wave_source = WaveSource::load("assets/test.wav");
+    // let wave_source = WaveSource::load("assets/test.wav");
+    let wave_source = WaveSource::new();
     let result = execute_ft(&wave_source);
 
     println!("a0: {}", result.a0);
