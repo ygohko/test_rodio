@@ -9,6 +9,8 @@ use wav_io::reader;
 
 const SAMPLING_FREQUENCY: f32 = 24000.0;
 const BASE_FREQUENCY: f32 = 440.0;
+const SAMPLE_COUNT: i32 = 24000 * 3;
+const PARAMETER_COUNT: i32 = 8;
 
 struct TestSource {
     count: i32,
@@ -100,7 +102,7 @@ impl WaveSource {
     fn new() -> Self {
         let mut angle: f32 = 0.0;
         let mut samples: Vec<f32> = Vec::new();
-        for i in 0..(24000 * 3) {
+        for i in 0..SAMPLE_COUNT {
             samples.push(angle.sin());
             angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY;
         }
@@ -146,34 +148,56 @@ fn execute_ft(source: &WaveSource) -> FtResult {
     };
     result.a0 = sum / (source.samples.len() as f32);
 
-    const PARAMETER_COUNT: i32 = 8;
     // Calculate a1 - a8.
-    for i in 1..PARAMETER_COUNT {
+    for i in 0..PARAMETER_COUNT {
         let mut angle: f32 = 0.0;
 
         let mut sum: f32 = 0.0;
         for sample in &source.samples {
             let value = angle.cos();
             sum += sample * value;
-            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * (i as f32);
+            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * ((i + 1) as f32);
         }
         result.a.push(sum / (source.samples.len() as f32));
     }
 
     // Calculate b1 - b8.
-    for i in 1..PARAMETER_COUNT {
+    for i in 0..PARAMETER_COUNT {
         let mut angle: f32 = 0.0;
 
         let mut sum: f32 = 0.0;
         for sample in &source.samples {
             let value = angle.sin();
             sum += sample * value;
-            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * (i as f32);
+            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * ((i + 1) as f32);
         }
         result.b.push(sum / (source.samples.len() as f32));
     }
 
     result
+}
+
+fn execute_ift(ft_result: &FtResult) -> WaveSource {
+    let mut samples: Vec<f32> = Vec::new();
+    for i in 0..SAMPLE_COUNT {
+        let mut sample: f32 = ft_result.a0;
+        for j in 0..PARAMETER_COUNT {
+            let angle = 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * (i as f32) * ((j + 1) as f32);
+            sample += ft_result.a[j as usize] * angle.cos();
+        }
+
+        for j in 0..PARAMETER_COUNT {
+            let angle = 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * (i as f32) * ((j + 1) as f32);
+            sample += ft_result.b[j as usize] * angle.cos();
+        }
+
+        samples.push(sample);
+    }
+
+    WaveSource {
+        samples: samples,
+        index: 0,
+    }
 }
 
 fn main() {
@@ -203,13 +227,12 @@ fn main() {
     for i in 0..result.b.len() {
         println!("b{}: {}", i + 1, result.b[i]);
     }
-    
-    // TODO: Show results.
-    /*
-    sink.append(wave_source);
 
-    // The sound plays in a separate thread. This call will block the current thread until the sink
-    // has finished playing all its queued sounds.
+    let wave_source1 = execute_ift(&result);
+    
+    sink.append(wave_source);
     sink.sleep_until_end();
-    */
+
+    sink.append(wave_source1);
+    sink.sleep_until_end();
 }
