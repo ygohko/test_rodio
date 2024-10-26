@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use std::time::Duration;
+use std::thread;
 use rodio::{Decoder, OutputStream, Sink};
 use rodio::source::{SineWave, Source};
 use wav_io::reader;
@@ -103,7 +104,15 @@ impl WaveSource {
         let mut angle: f32 = 0.0;
         let mut samples: Vec<f32> = Vec::new();
         for i in 0..SAMPLE_COUNT {
-            samples.push(angle.sin());
+
+            let mut sample = angle.sin();
+            if sample <= 0.0 {
+                sample = -1.0;
+            }
+            else {
+                sample = 1.0;
+            }
+            samples.push(sample);
             angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY;
         }
 
@@ -232,6 +241,8 @@ fn main() {
     
     sink.append(wave_source);
     sink.sleep_until_end();
+
+    thread::sleep(Duration::from_secs(1));
 
     sink.append(wave_source1);
     sink.sleep_until_end();
