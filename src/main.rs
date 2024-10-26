@@ -9,7 +9,6 @@ use rodio::source::{SineWave, Source};
 use wav_io::reader;
 
 const SAMPLING_FREQUENCY: f32 = 24000.0;
-const BASE_FREQUENCY: f32 = 440.0;
 const SAMPLE_COUNT: i32 = 24000 * 3;
 const PARAMETER_COUNT: i32 = 8;
 
@@ -113,7 +112,7 @@ impl WaveSource {
                 sample = 1.0;
             }
             samples.push(sample);
-            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY;
+            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * 440.0;
         }
 
         Self {
@@ -139,18 +138,41 @@ impl WaveSource {
 }
 
 struct FtResult {
+    base_frequency: f32,
     a0: f32,
     a: Vec<f32>,
     b: Vec<f32>,
 }
 
-fn execute_ft(source: &WaveSource) -> FtResult {
+impl FtResult {
+    fn new() -> Self {
+        Self {
+            base_frequency: 0.0,
+            a0: 0.0,
+            a: Vec::new(),
+            b: Vec::new(),
+        }
+    }
+
+    fn score(&self) ->f32 {
+        let mut value = 0.0;
+        for i in 0..PARAMETER_COUNT {
+            value += self.a[i as usize].abs();
+            value += self.b[i as usize].abs();
+        }
+
+        value / ((PARAMETER_COUNT * 2) as f32)
+    }
+}
+
+fn execute_ft(source: &WaveSource, base_frequency: f32) -> FtResult {
     // Calculate a0.
     let mut sum: f32 = 0.0;
     for sample in &source.samples {
         sum += sample;
     }
     let mut result = FtResult {
+        base_frequency: base_frequency,
         a0: 0.0,
         a: Vec::new(),
         b: Vec::new(),
@@ -165,7 +187,7 @@ fn execute_ft(source: &WaveSource) -> FtResult {
         for sample in &source.samples {
             let value = angle.cos();
             sum += sample * value;
-            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * ((i + 1) as f32);
+            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * base_frequency * ((i + 1) as f32);
         }
         result.a.push(sum / (source.samples.len() as f32));
     }
@@ -178,7 +200,7 @@ fn execute_ft(source: &WaveSource) -> FtResult {
         for sample in &source.samples {
             let value = angle.sin();
             sum += sample * value;
-            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * ((i + 1) as f32);
+            angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * base_frequency * ((i + 1) as f32);
         }
         result.b.push(sum / (source.samples.len() as f32));
     }
@@ -191,12 +213,12 @@ fn execute_ift(ft_result: &FtResult) -> WaveSource {
     for i in 0..SAMPLE_COUNT {
         let mut sample: f32 = ft_result.a0;
         for j in 0..PARAMETER_COUNT {
-            let angle = 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * (i as f32) * ((j + 1) as f32);
+            let angle = 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * ft_result.base_frequency * (i as f32) * ((j + 1) as f32);
             sample += ft_result.a[j as usize] * angle.cos();
         }
 
         for j in 0..PARAMETER_COUNT {
-            let angle = 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * BASE_FREQUENCY * (i as f32) * ((j + 1) as f32);
+            let angle = 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * ft_result.base_frequency * (i as f32) * ((j + 1) as f32);
             sample += ft_result.b[j as usize] * angle.cos();
         }
 
@@ -227,8 +249,19 @@ fn main() {
     let test_source = TestSource::new();
     // let wave_source = WaveSource::load("assets/test.wav");
     let wave_source = WaveSource::new();
-    let result = execute_ft(&wave_source);
 
+    let mut best_store: f32 = 0.0;
+    let mut result = FtResult::new();
+    for i in 220..441 {
+        let result1 = execute_ft(&wave_source, i as f32);
+        let score = result1.score();
+        if score > best_store {
+            best_store = score;
+            result = result1;
+        }
+    }
+
+    println!("base_frequency: {}", result.base_frequency);
     println!("a0: {}", result.a0);
     for i in 0..result.a.len() {
         println!("a{}: {}", i + 1, result.a[i]);
