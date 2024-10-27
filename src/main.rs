@@ -11,7 +11,7 @@ use wav_io::reader;
 const SAMPLING_FREQUENCY: f32 = 24000.0;
 const SAMPLE_COUNT: i32 = 24000 * 3;
 const PARAMETER_COUNT: i32 = 8;
-const DFT_SAMPLE_COUNT: i32 = 1000;
+const DFT_SAMPLE_COUNT: i32 = 500;
 
 struct TestSource {
     count: i32,
@@ -273,7 +273,7 @@ fn execute_dft(source: &WaveSource) -> Vec<FtResult> {
     return results;
 }
 
-fn execute_idft(results: &Vec<FtResult>) -> WaveSource {
+fn execute_idft(results: &Vec<FtResult>, multiplier: f32) -> WaveSource {
     let mut samples: Vec<f32> = Vec::new();
     for ft_result in results {
         for i in 0..DFT_SAMPLE_COUNT {
@@ -288,7 +288,7 @@ fn execute_idft(results: &Vec<FtResult>) -> WaveSource {
                 sample += ft_result.b[j as usize] * angle.cos();
             }
 
-            samples.push(sample);
+            samples.push(sample * multiplier);
         }
     }
 
@@ -317,6 +317,7 @@ fn main() {
     let wave_source = WaveSource::load("assets/test.wav");
     // let wave_source = WaveSource::new();
 
+    /*
     let mut best_store: f32 = 0.0;
     let mut result = FtResult::new();
     for i in 220..441 {
@@ -342,10 +343,11 @@ fn main() {
     println!("");
 
     let wave_source1 = execute_ift(&result);
+    */
 
     let results = execute_dft(&wave_source);
 
-    let wave_source2 = execute_idft(&results);
+    let wave_source2 = execute_idft(&results, 4.0);
     
     sink.append(wave_source);
     sink.sleep_until_end();
