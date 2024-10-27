@@ -11,6 +11,7 @@ use wav_io::reader;
 const SAMPLING_FREQUENCY: f32 = 24000.0;
 const SAMPLE_COUNT: i32 = 24000 * 3;
 const PARAMETER_COUNT: i32 = 8;
+const DFT_SAMPLE_COUNT: i32 = 1000;
 
 struct TestSource {
     count: i32,
@@ -121,6 +122,10 @@ impl WaveSource {
         }
     }
 
+    fn len(&self) -> usize {
+        self.samples.len()
+    }
+
     fn load(path: impl AsRef<Path>) -> Self {
         let mut result = Self {
             samples: Vec::new(),
@@ -165,10 +170,11 @@ impl FtResult {
     }
 }
 
-fn execute_ft(source: &WaveSource, base_frequency: f32) -> FtResult {
+fn execute_ft(source: &WaveSource, base_frequency: f32, position: usize, count: usize) -> FtResult {
     // Calculate a0.
     let mut sum: f32 = 0.0;
-    for sample in &source.samples {
+    for i in position..(position + count) {
+        let sample = source.samples[i as usize];
         sum += sample;
     }
     let mut result = FtResult {
@@ -184,7 +190,8 @@ fn execute_ft(source: &WaveSource, base_frequency: f32) -> FtResult {
         let mut angle: f32 = 0.0;
 
         let mut sum: f32 = 0.0;
-        for sample in &source.samples {
+        for j in position..(position + count) {
+            let sample = source.samples[j as usize];
             let value = angle.cos();
             sum += sample * value;
             angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * base_frequency * ((i + 1) as f32);
@@ -197,7 +204,8 @@ fn execute_ft(source: &WaveSource, base_frequency: f32) -> FtResult {
         let mut angle: f32 = 0.0;
 
         let mut sum: f32 = 0.0;
-        for sample in &source.samples {
+        for j in position..(position + count) {
+            let sample = source.samples[j as usize];
             let value = angle.sin();
             sum += sample * value;
             angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * base_frequency * ((i + 1) as f32);
@@ -231,6 +239,39 @@ fn execute_ift(ft_result: &FtResult) -> WaveSource {
     }
 }
 
+fn execute_dft(source: &WaveSource) -> Vec<FtResult> {
+    let mut results: Vec<FtResult> = Vec::new();
+    let mut position = 0;
+    let mut done = false;
+    while !done {
+        let mut count = DFT_SAMPLE_COUNT;
+        if (position + count) > (source.samples.len() as i32) {
+            count = (source.samples.len() as i32) - position;
+            done = true;
+        }
+
+        let mut best_store: f32 = 0.0;
+        let mut result = FtResult::new();
+        for i in 220..441 {
+            let result1 = execute_ft(&source, i as f32, position as usize, count as usize);
+            let score = result1.score();
+            if score > best_store {
+                best_store = score;
+                result = result1;
+            }
+
+            // println!("base_frequency: {}, score: {}", i, score);
+        }
+
+        println!("base_frequency: {}", result.base_frequency);
+
+        results.push(result);
+        position += count;
+    }
+
+    return results;
+}
+
 fn main() {
     println!("Hello, world!");
 
@@ -253,7 +294,7 @@ fn main() {
     let mut best_store: f32 = 0.0;
     let mut result = FtResult::new();
     for i in 220..441 {
-        let result1 = execute_ft(&wave_source, i as f32);
+        let result1 = execute_ft(&wave_source, i as f32, 0, wave_source.samples.len());
         let score = result1.score();
         if score > best_store {
             best_store = score;
@@ -263,6 +304,7 @@ fn main() {
         println!("base_frequency: {}, score: {}", i, score);
     }
 
+    println!("");
     println!("base_frequency: {}", result.base_frequency);
     println!("a0: {}", result.a0);
     for i in 0..result.a.len() {
@@ -273,6 +315,8 @@ fn main() {
     }
 
     let wave_source1 = execute_ift(&result);
+
+    let results = execute_dft(&wave_source);
     
     sink.append(wave_source);
     sink.sleep_until_end();
