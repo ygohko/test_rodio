@@ -1,14 +1,13 @@
 use std::f32::consts;
 use std::fs::File;
-use std::io::BufReader;
 use std::path::Path;
 use std::time::Duration;
 use std::thread;
-use rodio::{Decoder, OutputStream, Sink};
-use rodio::source::{SineWave, Source};
-use wav_io::reader;
+use rodio::{OutputStream, Sink};
+use rodio::source::Source;
 
 const SAMPLING_FREQUENCY: f32 = 24000.0;
+#[allow(dead_code)]
 const SAMPLE_COUNT: i32 = 24000 * 3;
 const PARAMETER_COUNT: i32 = 8;
 const DFT_SAMPLE_COUNT: i32 = 500;
@@ -53,6 +52,7 @@ impl Iterator for TestSource {
 }
 
 impl TestSource {
+    #[allow(dead_code)]
     fn new() -> Self {
         return Self {
             count: 0,
@@ -100,11 +100,11 @@ impl Iterator for WaveSource {
 }
 
 impl WaveSource {
+    #[allow(dead_code)]
     fn new() -> Self {
         let mut angle: f32 = 0.0;
         let mut samples: Vec<f32> = Vec::new();
-        for i in 0..SAMPLE_COUNT {
-
+        for _i in 0..SAMPLE_COUNT {
             let mut sample = angle.sin();
             if sample <= 0.0 {
                 sample = -1.0;
@@ -216,6 +216,7 @@ fn execute_ft(source: &WaveSource, base_frequency: f32, position: usize, count: 
     result
 }
 
+#[allow(dead_code)]
 fn execute_ift(ft_result: &FtResult) -> WaveSource {
     let mut samples: Vec<f32> = Vec::new();
     for i in 0..SAMPLE_COUNT {
@@ -245,7 +246,7 @@ fn execute_dft(source: &WaveSource) -> Vec<FtResult> {
     let mut done = false;
     while !done {
         let mut count = DFT_SAMPLE_COUNT;
-        if (position + count) > (source.samples.len() as i32) {
+        if (position + count) > (source.len() as i32) {
             count = (source.samples.len() as i32) - position;
             done = true;
         }
@@ -263,7 +264,7 @@ fn execute_dft(source: &WaveSource) -> Vec<FtResult> {
             // println!("base_frequency: {}, score: {}", i, score);
         }
 
-        if (result.a.len() != 0 && result.b.len() != 0) {
+        if result.a.len() != 0 && result.b.len() != 0 {
             println!("base_frequency: {}, score: {}", result.base_frequency, result.score());
             results.push(result);
         }
@@ -304,16 +305,6 @@ fn main() {
     // _stream must live as long as the sink
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let sink = Sink::try_new(&stream_handle).unwrap();
-
-    /*
-    // Add a dummy source of the sake of the example.
-    let mut source = SineWave::new(440.0).take_duration(Duration::from_secs_f32(3.0)).amplify(1.0);
-    for i in 0..500 {
-        println!("next: {}", source.next().unwrap());
-    }
-    */
-
-    let test_source = TestSource::new();
     let wave_source = WaveSource::load("assets/test.wav");
     // let wave_source = WaveSource::new();
 
