@@ -263,13 +263,39 @@ fn execute_dft(source: &WaveSource) -> Vec<FtResult> {
             // println!("base_frequency: {}, score: {}", i, score);
         }
 
-        println!("base_frequency: {}", result.base_frequency);
-
-        results.push(result);
+        if (result.a.len() != 0 && result.b.len() != 0) {
+            println!("base_frequency: {}, score: {}", result.base_frequency, result.score());
+            results.push(result);
+        }
         position += count;
     }
 
     return results;
+}
+
+fn execute_idft(results: &Vec<FtResult>) -> WaveSource {
+    let mut samples: Vec<f32> = Vec::new();
+    for ft_result in results {
+        for i in 0..DFT_SAMPLE_COUNT {
+            let mut sample: f32 = ft_result.a0;
+            for j in 0..PARAMETER_COUNT {
+                let angle = 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * ft_result.base_frequency * (i as f32) * ((j + 1) as f32);
+                sample += ft_result.a[j as usize] * angle.cos();
+            }
+
+            for j in 0..PARAMETER_COUNT {
+                let angle = 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * ft_result.base_frequency * (i as f32) * ((j + 1) as f32);
+                sample += ft_result.b[j as usize] * angle.cos();
+            }
+
+            samples.push(sample);
+        }
+    }
+
+    WaveSource {
+        samples: samples,
+        index: 0,
+    }
 }
 
 fn main() {
@@ -303,9 +329,9 @@ fn main() {
 
         println!("base_frequency: {}, score: {}", i, score);
     }
-
     println!("");
-    println!("base_frequency: {}", result.base_frequency);
+
+    println!("base_frequency: {}, score: {}", result.base_frequency, result.score());
     println!("a0: {}", result.a0);
     for i in 0..result.a.len() {
         println!("a{}: {}", i + 1, result.a[i]);
@@ -313,10 +339,13 @@ fn main() {
     for i in 0..result.b.len() {
         println!("b{}: {}", i + 1, result.b[i]);
     }
+    println!("");
 
     let wave_source1 = execute_ift(&result);
 
     let results = execute_dft(&wave_source);
+
+    let wave_source2 = execute_idft(&results);
     
     sink.append(wave_source);
     sink.sleep_until_end();
@@ -324,5 +353,10 @@ fn main() {
     thread::sleep(Duration::from_secs(1));
 
     sink.append(wave_source1);
+    sink.sleep_until_end();
+
+    thread::sleep(Duration::from_secs(1));
+
+    sink.append(wave_source2);
     sink.sleep_until_end();
 }
