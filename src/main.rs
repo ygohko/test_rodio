@@ -183,7 +183,7 @@ fn execute_ft(source: &WaveSource, base_frequency: f32, position: usize, count: 
         a: Vec::new(),
         b: Vec::new(),
     };
-    result.a0 = sum / (source.samples.len() as f32);
+    result.a0 = sum / (count as f32);
 
     // Calculate a1 - a8.
     for i in 0..PARAMETER_COUNT {
@@ -196,7 +196,7 @@ fn execute_ft(source: &WaveSource, base_frequency: f32, position: usize, count: 
             sum += sample * value;
             angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * base_frequency * ((i + 1) as f32);
         }
-        result.a.push(sum / (source.samples.len() as f32));
+        result.a.push(sum / (count as f32));
     }
 
     // Calculate b1 - b8.
@@ -210,7 +210,7 @@ fn execute_ft(source: &WaveSource, base_frequency: f32, position: usize, count: 
             sum += sample * value;
             angle += 2.0 * consts::PI * (1.0 / SAMPLING_FREQUENCY) * base_frequency * ((i + 1) as f32);
         }
-        result.b.push(sum / (source.samples.len() as f32));
+        result.b.push(sum / (count as f32));
     }
 
     result
@@ -314,8 +314,8 @@ fn main() {
     */
 
     let test_source = TestSource::new();
-    // let wave_source = WaveSource::load("assets/test.wav");
-    let wave_source = WaveSource::new();
+    let wave_source = WaveSource::load("assets/test.wav");
+    // let wave_source = WaveSource::new();
 
     let mut best_store: f32 = 0.0;
     let mut result = FtResult::new();
@@ -352,10 +352,12 @@ fn main() {
 
     thread::sleep(Duration::from_secs(1));
 
+    /*
     sink.append(wave_source1);
     sink.sleep_until_end();
 
     thread::sleep(Duration::from_secs(1));
+    */
 
     sink.append(wave_source2);
     sink.sleep_until_end();
