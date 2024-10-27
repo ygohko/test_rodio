@@ -259,6 +259,8 @@ fn main() {
             best_store = score;
             result = result1;
         }
+
+        println!("base_frequency: {}, score: {}", i, score);
     }
 
     println!("base_frequency: {}", result.base_frequency);
