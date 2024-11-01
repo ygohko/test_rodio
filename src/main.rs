@@ -344,57 +344,17 @@ fn execute_idft(results: &Vec<FtResult>, multiplier: f32) -> WaveSource {
 }
 
 fn main() {
-    println!("Hello, world!");
-
-    // _stream must live as long as the sink
     let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     let sink = Sink::try_new(&stream_handle).unwrap();
+
     let wave_source = WaveSource::load("assets/test.wav");
-    // let wave_source = WaveSource::new();
-
-    /*
-    let mut best_store: f32 = 0.0;
-    let mut result = FtResult::new();
-    for i in 220..441 {
-        let result1 = execute_ft(&wave_source, i as f32, 0, wave_source.samples.len());
-        let score = result1.score();
-        if score > best_store {
-            best_store = score;
-            result = result1;
-        }
-
-        println!("base_frequency: {}, score: {}", i, score);
-    }
-    println!("");
-
-    println!("base_frequency: {}, score: {}", result.base_frequency, result.score());
-    println!("a0: {}", result.a0);
-    for i in 0..result.a.len() {
-        println!("a{}: {}", i + 1, result.a[i]);
-    }
-    for i in 0..result.b.len() {
-        println!("b{}: {}", i + 1, result.b[i]);
-    }
-    println!("");
-
-    let wave_source1 = execute_ift(&result);
-    */
-
     let results = execute_dft(&wave_source);
-
     let wave_source2 = execute_idft(&results, 4.0);
 
     sink.append(wave_source);
     sink.sleep_until_end();
 
     thread::sleep(Duration::from_secs(1));
-
-    /*
-    sink.append(wave_source1);
-    sink.sleep_until_end();
-
-    thread::sleep(Duration::from_secs(1));
-    */
 
     sink.append(wave_source2);
     sink.sleep_until_end();
